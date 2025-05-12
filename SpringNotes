@@ -798,3 +798,362 @@ Ex:
 </bean>
 
 <bean id="e" class="in.ashokit.Engine" />
+
+
+=============
+Bean Scopes
+=============	
+
+=> Bean scope represents how many objects should be created for spring bean by IOC container.
+
+=> We have below bean scopes in spring
+
+	1) Singleton (default)
+
+	2) Prototype
+
+	3) Request
+
+	4) Session
+
+-------------
+Singleton
+-------------
+
+=> singleton is default scope.
+
+=> Only one instance will be created for spring bean.
+
+=> Singleton scoped beans objects will be created when IOC container started. 
+
+=> Singleton beans will follow Eager Loading.
+
+-------------
+Prototype  
+-------------
+
+=> Every time new object will be created for spring bean on demand basis. 
+
+=> When we call getBean() method then only obj will be created.
+
+=> Prototype beans will follow lazy loading.
+
+------------------
+request & session
+------------------
+
+=> These 2 scopes are belongs to spring web mvc module.
+
+
+
+
+=========================
+Spring Core Annotations
+=========================
+
+1) @Component
+
+2) @Service
+
+3) @Repository
+
+4) @Configuration
+
+5) @Bean ------------------- method level
+
+6) @ComponentScan
+
+7) @Autowired
+
+8) @Qualifier
+
+9) @Primary
+
+10) @Scope
+
+=================
+1. @Component
+=================
+
+-> General-purpose stereotype.
+
+-> Indicates that the class is a Spring-managed component.
+
+-> Spring will autodetect this class through classpath scanning and register it as a bean.
+
+@Component
+public class Engine {
+
+}
+
+=================
+2. @Service
+=================
+
+-> Specialization of @Component.
+
+-> It is used to annotate service layer classes.
+
+-> Semantically tells the developer and Spring that this class contains business logic.
+
+@Service
+public class BookService {
+	
+}
+
+=================
+3. @Repostiory
+=================
+
+-> Another specialization of @Component.
+
+=> It is Used to annotate DAO (Data Access Object) classes.
+
+=> It provides additional benefits like automatic exception translation from persistence-specific exceptions (like JDBC exceptions) into Spring DataAccessException.
+
+
+@Repository
+public class UserDao {
+	
+}
+
+=======================================
+Q) What is @Configuration annotation ?
+=======================================
+
+=> It is used to represent java class as configuration class.
+
+=> This configuration class is used as replacement for xml configuration.
+
+@Configuration
+public class AppConfig {
+
+	public AppConfig() {
+		System.out.println("AppConfig :: Constructor");
+	}
+}
+
+============================
+Q) What is @Bean annotation
+============================
+
+=> It is method level annotation.
+
+=> It is used when we want to customize bean obj creation.
+
+@Bean
+public AppSecurity createInstance() {
+	// logic
+	return new AppSecurity("SHA-256");
+}
+
+
+==============================================================
+Q) What is component scanning and how it works internally ?
+==============================================================
+
+=> It is the process of identifying spring beans available in the project by scanning application packages.
+
+=> To specify component scanning we will use @ComponentScan annotation.
+
+-----------------------------------------------------------------
+@Configuration
+@ComponentScan(basePackages = "in.ashokit")
+public class AppConfig {
+
+	public AppConfig() {
+		System.out.println("AppConfig :: Constructor");
+	}
+}
+-----------------------------------------------------------------
+
+=> Component Scanning will start from base pacakge
+
+=> Once base package scanning completed, then it will go for sub packages of base package.
+
+Note: Any package name which is starting with base package name is called as sub package.
+
+			in.ashokit  --------------------- (base package)
+			in.ashokit.beans ------------- will be scanned
+			in.ashokit.dao --------------- will be scanned
+			in.ashokit.service ----------- will be scanned
+
+			com.tcs.beans ------------------- will not be scanned
+
+
+Note: We can configure more than one base package using @ComponentScan annotation like below.
+
+		@ComponentScan(basePackages = { "in.ashokit", "com.tcs" })
+
+
+=========================
+Q) What is @Autowired ?
+=========================
+
+=> The process of injecting one class obj into another class obj is called as dependency injection (DI).
+
+=> controller class method should call service class method
+		(inject service obj into controller class)
+
+=> Service class method should call dao class method
+		(inject dao obj into service)
+
+=> Dependency Injection we can perform in 3 ways
+
+	1) setter injection
+
+	2) constructor injection
+
+	3) Field Injection
+
+=> IOC container is responsible to perform dependency injection in our applications.	
+
+=> By using Autowiring we will tell to IOC to perform Dependency Injection.
+
+=> To perform DI with Autowiring we will use @Autowired annoation.
+
+=> @Autowired annotation we can use at 3 places
+
+			 - setter method level (SI)
+
+	 		 - constructor level (CI)
+
+			 - field/variable level (FI)
+
+===============================================
+Which Dependency Injection is better to use ?
+===============================================			 
+
+## CI : Dependencies are injected through the target class constructor.
+
+=> First dependent object will be created.
+
+=> Promotes immutability : dependencies can't be changed after object creation.
+
+=> Ideal for mandatory dependencies : If dependent obj is available, then only target obj will be created.
+
+Best for: Mandatory dependencies and making code easier to test and maintain.
+
+## SI : Dependencies are injected through public setter methods.
+
+=> First target object will be created.
+
+=> If we write @Autowired at setter method then only it will be called. 
+
+=> If setter method is not called dependent obj will not be injected then there is a chance of getting NullPointerExceptions.
+
+=> Allows optional dependencies.
+
+=> Supports re-injection or modification post-construction.
+
+Best for: Optional dependencies or when you need to change dependencies dynamically.
+
+
+## FI : Dependencies are injected directly into class fields using Reflection API.
+
+=> least boilerplate code, quick and clean looking code.
+
+=> Cannot be used with final fields.
+
+=> Difficult to test with pure unit tests (requires reflection or framework support).
+
+Note: Generally not recommended 
+
+
+
+=================
+Bean life cycle
+=================
+
+Q) What is spring bean ?
+
+-> The java class which is managed by ioc container is called as spring bean.
+
+-> IOC container will take care of bean life cycle 
+
+		- creating bean object
+		- manage bean object
+		- destroy bean object
+
+=> When iOC container managing bean life cycle we can execute life cycle methods using below annotations
+
+		1) @PostConstruct (after obj creation)
+
+		2) @PreDestroy (before obj deletion)
+
+------------------------------------------------------
+@Component
+public class Motor {
+
+	@PostConstruct
+	public void start() {
+		System.out.println("Motor getting started....");
+	}
+
+	public void doWork() {
+		System.out.println("Motor is running...");
+	}
+
+	@PreDestroy
+	public void stop() {
+		System.out.println("Motor stopped...");
+	}
+
+}
+---------------------------------------------------------------
+
+Note: The above 2 annotations are not part of spring framework, to use them in our application we should add below dependency in pom.xml file.
+
+<dependency>
+    <groupId>javax.annotation</groupId>
+    <artifactId>javax.annotation-api</artifactId>
+    <version>1.3.2</version>
+</dependency>
+
+-----------------------------------------------------------------
+
+======================
+Spring Core Summary
+======================
+
+
+1) What is Framework & Why 
+
+2) Struts Vs Hibernate Vs Spring
+
+3) Spring Introduction
+
+4) Spring Architecture
+
+5) Spring Modules Overview 
+
+6) Spring Core Module & Why
+
+7) IOC Container
+
+8) Dependency Injection
+
+9) Constructor Injection
+
+10) Setter Injection
+
+11) Field Injection
+
+12) Bean Scopes (singleton & prototype)
+
+13) Spring Core Annotations
+
+14) @Component Vs @Service Vs @Repository
+
+15) @Configuration & @Bean
+
+16) @ComponentScan
+
+17) @Autowired + @Qualifier + @Primary
+
+18) Bean Lifecycle 
+
+	 - @PostConstruct
+	 - @PreDestroy
+
+=========================================================
