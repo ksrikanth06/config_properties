@@ -426,3 +426,180 @@ Note: To implement above 2 requirements we can't use predefined generators.
 Note: Inside generate() method we should logic according to our requirement.
 
 @@ Custom Generator Example Video : https://youtu.be/IijGVtT9ZPk?si=gyjATE7nMgllX_kH
+
+
+=====================================
+How to work with In memory Database
+=====================================
+
+=> Oracle & MySQL Databases are called as External databases. We need to download and install these databases in our system.
+
+=> Data stored in External Databases is permanent. Data remains perminently even if our application is not running.
+
+=> Spring Boot supports In Memory databases also like H2.
+
+=> In Memory DB means when app starts DB will come and when app stopped then DB will be removed.
+
+Note: In Memory DBs are used for practice purpose and for 
+POC (Proof of concept) development.
+
+------------------ working with In-Memory database ---------------
+
+Step-1 : Create boot app with below dependencies
+
+		1) data-jpa-starter
+		2) h2 driver
+		3) web-starter
+		4) project lombok
+
+Step-2 : Configure datasource props in "application.properties" file	
+
+# Data source properties
+spring.datasource.url=jdbc:h2:mem:testdb
+spring.datasource.driverClassName=org.h2.Driver
+spring.datasource.username=ashokit
+spring.datasource.password=abc@123
+
+spring.h2.console.enabled=true
+
+
+Step-3 : Create Entity class & repo interface
+
+---------------------------------------------------
+@Entity
+@Data
+public class Product {
+
+	@Id
+	@GeneratedValue(strategy = GenerationType.IDENTITY)
+	private Integer productId;
+
+	private String productName;
+
+	private Double productPrice;
+
+	@CreationTimestamp
+	@Column(updatable = false)
+	private LocalDate createdDate;
+
+	@UpdateTimestamp
+	@Column(insertable = false)
+	private LocalDate updatedDate;
+
+}
+-----------------------------------------------------
+
+Step-4 : Service class with business methods
+
+Step-5 : Test application methods
+
+
+
+=======================================================================
+
+Spring Boot with AWS RDS : https://www.youtube.com/watch?v=GSu1g9jvFhY
+
+=======================================================================
+
+1) Spring Data JPA with Oracle
+
+2) Spring Data JPA with MySQL
+
+3) Spring Data JPA with H2 (only for practice)
+
+4) Spring Data JPA with AWS RDS
+
+5) Spring Data with Mongo DB Integration
+
+=====================================================================
+
+Q) How to connect with multiple databases using springboot
+
+insert emp record in MYSQL DB
+
+insert product record in H2 DB
+
+Referene Video : https://www.youtube.com/watch?v=mIFIb_JE47U
+
+=====================================================================
+
+
+========================
+Spring Boot Profiles
+========================
+
+=> SpringBoot Profiles are used to maintain environment specific configurations.
+
+=> In real-time we will have multiple environments to test our application.
+
+		1) DEV
+		2) SIT
+		3) UAT
+		4) PILOT
+		5) PROD (live)
+
+=> DEV env used by developers to perform Integration testing.
+
+=> SIT env used by testers to perform system integration testing.
+
+=> UAT env used by client side team to perform user acceptance testing.
+
+=> PILOT env used for pre-prod testing.
+
+=> PROD env used for live deployment. End users will access the application which is running in PROD Env.
+
+Note: ENV to ENV some properties will be different 
+
+Ex: datasource, smtp, payment gateway, kafka ...
+
+=> When we are deploying application to paritcular environment we need to make changes to application.properties file.
+
+=> Everytime changing properties file is not recommended. It is time taking process and there is a chance of doing mistakes also.
+
+Note: To avoid these problems we will use Spring Boot Profiles concept.
+
+=> Using profiles, we will create seperate properties for every env like below..
+
+		application-dev.properties
+
+		application-sit.properties
+
+		application-uat.properties
+
+		application-pilot.properties
+
+		application-prod.properties
+
+=> From which file it should load the properties that we are going to configure in main "application.properties" file. This is called as activating profile.
+
+		spring.profiles.active=prod
+
+======================
+Association Mapping
+======================
+
+=> For every application multiple database tables will be available. Those Tables will have relationships.
+
+=> One table data will have relationship with another table data like below...
+
+Ex-1 : Employee and Address (one emp can have mutliple addresses)
+
+Ex-2 : Country and State (one country having multiple states)
+
+Ex-3 : Book and Author (one author can publish multiple books)
+
+Ex-4 : User and Role (one user can have multiple roles)
+
+Note: To establish relationships among db tables we will use FOREGIN KEY concept.
+
+=> Association mapping is used to represent DB tables relationships in Entity classes.
+
+=> Relationships we can divide into 4 types
+
+		1) One To One
+
+		2) One To Many
+
+		3) Many To One
+
+		4) Many to Many
