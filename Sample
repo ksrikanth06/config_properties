@@ -110,10 +110,10 @@ const App = () => {
       if (code) {
         setStatus('Success');
         setUserInfo('Authentication successful! Processing user data...');
-        setWebViewUrl('https://kadariapp_deeplink_scheme.com/');
+        setWebViewUrl('https://anysampplewebpage.com/');
         getToken(code);
       } else if (error) {
-        setWebViewUrl('https://kadariapp_deeplink_scheme.com/');
+        setWebViewUrl('https://anysampplewebpage.com/');
         setStatus('Error');
         setUserInfo('Authentication failed: ' + error);
       }
