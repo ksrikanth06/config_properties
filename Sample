@@ -1,0 +1,207 @@
+import React, { useRef, useState } from 'react';
+import { SafeAreaView, View, Text, Button, StyleSheet, Alert, ScrollView } from 'react-native';
+import { WebView, WebViewNavigation } from 'react-native-webview';
+import axios from 'axios';
+
+const LOGIN_URL_STG = 'https://stg-id.uaepass.ae/idshub/authorize?';
+const LOGIN_URL = 'https://id.uaepass.ae/idshub/authorize?';
+
+const ACRN_MOBILE = 'urn:digitalid:authentication:flow:mobileondevice';
+const ACRN_WEB = 'urn:safelayer:tws:policies:authentication:level:low';
+
+const APP_REDIRECT_URL = 'srikanth://redirect';
+const APP_REDIRECT_URL_PROD = '';
+
+const URL_SCHEME = 'srikanth';
+const URL_SCHEME_PROD = 'PROD_SCHEME'; // Replace with actual production scheme
+
+const HOST_SUCCESS = 'uaepasssuccess';
+const HOST_FAILURE = 'uaepassfailure';
+
+const UAE_PASS_CLIENT_ID_STG = 'sandbox_stage';
+const UAE_PASS_CLIENT_ID = '';
+
+const UAE_PASS_CLIENT_SECRET_STG = 'HnlHOJTkTb66Y5H';
+const UAE_PASS_CLIENT_SECRET = '';
+
+const SCOPE = 'urn:uae:digitalid:profile:general';
+const RESPONSE_TYPE = 'code';
+
+type UserProfileResponse = {
+  firstnameEN?: string;
+  [key: string]: any;
+};
+
+const App = () => {
+  const [status, setStatus] = useState('Ready');
+  const [userInfo, setUserInfo] = useState('No user information available');
+  const [isWebLogin, setIsWebLogin] = useState(false);
+  const [isProd] = useState(false);
+  const [webViewUrl, setWebViewUrl] = useState(getURL(false, isProd));
+  const [successUrl, setSuccessUrl] = useState('');
+  const [failureUrl, setFailureUrl] = useState('');
+  const webViewRef = useRef<WebView>(null);
+
+  function getURL(isWeb: boolean, isProd: boolean) {
+    const base_url = isProd ? LOGIN_URL : LOGIN_URL_STG;
+    const acrn = isWeb ? ACRN_WEB : ACRN_MOBILE;
+    const clientId = isProd ? UAE_PASS_CLIENT_ID : UAE_PASS_CLIENT_ID_STG;
+    const clientSecret = isProd ? UAE_PASS_CLIENT_SECRET : UAE_PASS_CLIENT_SECRET_STG;
+    const redirectUrl = isProd ? APP_REDIRECT_URL_PROD : APP_REDIRECT_URL;
+
+    return (
+      base_url +
+      `redirect_uri=${redirectUrl}` +
+      `&client_id=${clientId}` +
+      `&response_type=${RESPONSE_TYPE}` +
+      `&state=${clientSecret}` +
+      `&scope=${SCOPE}` +
+      `&acr_values=${acrn}` +
+      `&ui_locales=en`
+    );
+  }
+
+  function getParamsFromURL(url: string): Record<string, string> {
+    const params: Record<string, string> = {};
+    const queryString = url.split('?')[1] || '';
+    queryString.split('&').forEach((part) => {
+      const [key, value] = part.split('=');
+      if (key) params[key] = decodeURIComponent(value || '');
+    });
+    return params;
+  }
+
+  function updateURLParameter(url: string, param: string, paramVal: string) {
+    const [base, query] = url.split('?');
+    const params = (query || '').split('&').filter(Boolean);
+    const filtered = params.filter((p) => !p.startsWith(param + '='));
+    filtered.push(`${param}=${encodeURIComponent(paramVal)}`);
+    return `${base}?${filtered.join('&')}`;
+  }
+
+  const handleLogin = (web: boolean) => {
+    setStatus('Authenticating...');
+    setUserInfo(web ? 'Preparing web authentication...' : 'Preparing mobile authentication...');
+    setIsWebLogin(web);
+    setWebViewUrl(getURL(web, isProd));
+    setSuccessUrl('');
+    setFailureUrl('');
+  };
+
+  const handleLogout = () => {
+    setStatus('Logging out...');
+    setUserInfo('Logging out...');
+    setSuccessUrl('');
+    setWebViewUrl('https://stg-id.uaepass.ae/idshub/logout?redirect_uri=srikanth://redirect');
+  };
+
+  const handleWebViewNavigationStateChange = (navState: WebViewNavigation) => {
+    const { url } = navState;
+    if (url === APP_REDIRECT_URL) {
+      setUserInfo('Logged out...');
+      setWebViewUrl(getURL(false, isProd));
+      return;
+    }
+
+    if (url.startsWith(URL_SCHEME) || url.startsWith(URL_SCHEME_PROD)) {
+      const uri = new URL(url);
+      const code = uri.searchParams.get('code');
+      const error = uri.searchParams.get('error');
+      if (code) {
+        setStatus('Success');
+        setUserInfo('Authentication successful! Processing user data...');
+        setWebViewUrl('https://kadarisrikanth.com/');
+        getToken(code);
+      } else if (error) {
+        setWebViewUrl('https://kadarisrikanth.com/');
+        setStatus('Error');
+        setUserInfo('Authentication failed: ' + error);
+      }
+      return;
+    }
+
+    if (url.startsWith('uaepass') && !successUrl && !isWebLogin) {
+      const urlScheme = isProd ? URL_SCHEME_PROD : URL_SCHEME;
+      const queryParams = getParamsFromURL(url);
+      setSuccessUrl(queryParams['successurl'] || '');
+      setFailureUrl(queryParams['failureurl'] || '');
+      let newUrl = isProd ? url : url.replace('uaepass://', 'uaepassstg://');
+      newUrl = updateURLParameter(newUrl, 'successurl', `${urlScheme}://${HOST_SUCCESS}`);
+      newUrl = updateURLParameter(newUrl, 'failureurl', `${urlScheme}://${HOST_FAILURE}`);
+      Alert.alert('Open UAE Pass App', 'This would open the UAE Pass app:\n' + newUrl);
+      // Linking.openURL(newUrl); // Uncomment if you want to actually open the app
+    }
+  };
+
+  async function getToken(authCode: string) {
+    try {
+      // Replace with your actual token endpoint and params
+      const response = await axios.post<TokenResponse>('YOUR_TOKEN_ENDPOINT', {
+        code: authCode,
+        // ...other params
+      });
+      setStatus('Getting user profile...');
+      getUserProfile(response.data.access_token);
+    } catch (e: any) {
+      setStatus('Authentication failed');
+      setUserInfo('Failed to get access token: ' + e.message);
+    }
+  }
+
+  async function getUserProfile(accessToken: string) {
+    try {
+      // Replace with your actual user info endpoint
+      const response = await axios.get<UserProfileResponse>('YOUR_USER_INFO_ENDPOINT', {
+        headers: { Authorization: `Bearer ${accessToken}` },
+      });
+      setStatus('Authentication successful');
+      setUserInfo(formatUserProfile(response.data));
+    } catch (e: any) {
+      setStatus('Authentication failed');
+      setUserInfo('Failed to retrieve user profile: ' + e.message);
+    }
+  }
+
+  function formatUserProfile(userProfile: UserProfileResponse) {
+    if (!userProfile) return 'No user profile data available';
+    let formatted = '✓ Authentication Successful\n\n';
+    if (userProfile.firstnameEN) {
+      formatted += `Name: ${userProfile.firstnameEN}\n`;
+    }
+    formatted += '\n--- Raw Profile Data ---\n';
+    formatted += JSON.stringify(userProfile, null, 2);
+    return formatted;
+  }
+
+  return (
+    <SafeAreaView style={styles.container}>
+      <Text style={styles.status}>{status}</Text>
+      <ScrollView style={styles.userInfo}>
+        <Text>{userInfo}</Text>
+      </ScrollView>
+      <View style={styles.buttonRow}>
+        <Button title="App Login" onPress={() => handleLogin(false)} />
+        <Button title="Web Login" onPress={() => handleLogin(true)} />
+        <Button title="Logout" onPress={handleLogout} />
+      </View>
+      <WebView
+        ref={webViewRef}
+        source={{ uri: webViewUrl }}
+        style={styles.webview}
+        onNavigationStateChange={handleWebViewNavigationStateChange}
+        javaScriptEnabled
+        startInLoadingState
+      />
+    </SafeAreaView>
+  );
+};
+
+const styles = StyleSheet.create({
+  container: { flex: 1, padding: 8, backgroundColor: '#fff' },
+  status: { fontWeight: 'bold', fontSize: 18, marginBottom: 8 },
+  userInfo: { maxHeight: 120, marginBottom: 8 },
+  buttonRow: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 8 },
+  webview: { flex: 1, minHeight: 300 },
+});
+
+export default App;
