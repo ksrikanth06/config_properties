@@ -9,10 +9,10 @@ const LOGIN_URL = 'https://id.uaepass.ae/idshub/authorize?';
 const ACRN_MOBILE = 'urn:digitalid:authentication:flow:mobileondevice';
 const ACRN_WEB = 'urn:safelayer:tws:policies:authentication:level:low';
 
-const APP_REDIRECT_URL = 'srikanth://redirect';
+const APP_REDIRECT_URL = 'app_deeplink_scheme://redirect';
 const APP_REDIRECT_URL_PROD = '';
 
-const URL_SCHEME = 'srikanth';
+const URL_SCHEME = 'app_deeplink_scheme';
 const URL_SCHEME_PROD = 'PROD_SCHEME'; // Replace with actual production scheme
 
 const HOST_SUCCESS = 'uaepasssuccess';
@@ -92,7 +92,7 @@ const App = () => {
     setStatus('Logging out...');
     setUserInfo('Logging out...');
     setSuccessUrl('');
-    setWebViewUrl('https://stg-id.uaepass.ae/idshub/logout?redirect_uri=srikanth://redirect');
+    setWebViewUrl('https://stg-id.uaepass.ae/idshub/logout?redirect_uri=app_deeplink_scheme://redirect');
   };
 
   const handleWebViewNavigationStateChange = (navState: WebViewNavigation) => {
@@ -110,10 +110,10 @@ const App = () => {
       if (code) {
         setStatus('Success');
         setUserInfo('Authentication successful! Processing user data...');
-        setWebViewUrl('https://kadarisrikanth.com/');
+        setWebViewUrl('https://kadariapp_deeplink_scheme.com/');
         getToken(code);
       } else if (error) {
-        setWebViewUrl('https://kadarisrikanth.com/');
+        setWebViewUrl('https://kadariapp_deeplink_scheme.com/');
         setStatus('Error');
         setUserInfo('Authentication failed: ' + error);
       }
